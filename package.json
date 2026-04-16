@@ -1,0 +1,12 @@
+{
+  "name": "backend-acv2",
+  "private": true,
+  "description": "Backend HTTP para el SPA web (React). Instalá dependencias en server/ (npm run install:server); no es un proyecto móvil.",
+  "scripts": {
+    "install:server": "npm install --prefix server",
+    "dev": "npm run dev --prefix server",
+    "build": "npm run build --prefix server",
+    "start": "npm start --prefix server",
+    "seed:admin": "npm run seed:admin --prefix server"
+  }
+}
