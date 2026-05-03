@@ -12,6 +12,8 @@ const authLimiter = rateLimit({
   max: 60,
   standardHeaders: true,
   legacyHeaders: false,
+  // Si trust proxy no aplicara (p. ej. NODE_ENV distinto en hosting), evita tirar el middleware antes del login
+  validate: { xForwardedForHeader: false },
 });
 
 router.post('/register', authLimiter, validateBody(registerSchema), authController.register);
