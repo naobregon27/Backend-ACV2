@@ -21,6 +21,15 @@ const adminMediaUploadJsonLimitBytes = Math.ceil((MONGO_SAFE_BYTES * 4) / 3) + 5
 export function createApp(): express.Application {
   const app = express();
 
+  // Render/Railway envían X-Forwarded-*; sin trust proxy express-rate-limit puede lanzar ERR_ERL_UNEXPECTED_X_FORWARDED_FOR
+  const trustProxy =
+    env.NODE_ENV === 'production' ||
+    process.env.RENDER === 'true' ||
+    ['1', 'true'].includes(String(process.env.TRUST_PROXY ?? '').toLowerCase());
+  if (trustProxy) {
+    app.set('trust proxy', 1);
+  }
+
   app.use(
     helmet({
       crossOriginResourcePolicy: { policy: 'cross-origin' },
