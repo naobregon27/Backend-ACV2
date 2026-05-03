@@ -42,10 +42,10 @@ export const listMedia: RequestHandler = asyncHandler(async (req, res) => {
   const { page, pageSize, skip } = parsePagination(req.query as { page?: string; pageSize?: string });
   const [total, rows] = await Promise.all([
     MediaAsset.countDocuments({}),
-    MediaAsset.find({}).sort({ createdAt: -1 }).skip(skip).limit(pageSize).lean(),
+    MediaAsset.find({}).sort({ createdAt: -1 }).skip(skip).limit(pageSize),
   ]);
   res.json({
-    items: rows.map((m) => ({ ...m, id: String(m._id), _id: undefined })),
+    items: rows.map((m) => mediaPublic(m)),
     meta: paginationMeta(total, page, pageSize),
   });
 });

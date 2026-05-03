@@ -5,19 +5,21 @@ import compression from 'compression';
 import morgan from 'morgan';
 import swaggerUi from 'swagger-ui-express';
 import { env, corsOriginsList } from './config';
-
-/** Base64 ~4/3 del binario; margen extra para JSON y campo mimeType. */
-const adminMediaUploadJsonLimitBytes =
-  Math.ceil((env.MAX_UPLOAD_VIDEO_BYTES * 4) / 3) + 512 * 1024;
 import { apiV1Router } from './routes';
 import { errorMiddleware } from './middlewares/error.middleware';
-import { ensureUploadDir, uploadRoot } from './middlewares/upload.middleware';
 import { ApiError } from './utils/ApiError';
 import { swaggerSpec } from './swagger';
 
+/**
+ * Límite de body JSON para el endpoint de subida de media.
+ * Base64 ocupa ~4/3 del binario. El límite máximo seguro para MongoDB
+ * es ~15 MB binario → ~20 MB en base64 + overhead JSON.
+ */
+const MONGO_SAFE_BYTES = 15 * 1024 * 1024;
+const adminMediaUploadJsonLimitBytes = Math.ceil((MONGO_SAFE_BYTES * 4) / 3) + 512 * 1024;
+
 export function createApp(): express.Application {
   const app = express();
-  ensureUploadDir();
 
   app.use(
     helmet({
@@ -40,7 +42,6 @@ export function createApp(): express.Application {
     return express.json({ limit: '2mb' })(req, res, next);
   });
   app.use(morgan(env.NODE_ENV === 'production' ? 'combined' : 'dev'));
-  app.use('/uploads', express.static(uploadRoot));
 
   app.use('/api/v1/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
   app.use('/api/v1', apiV1Router);

@@ -4,20 +4,54 @@ import { GalleryItem } from '../../models/GalleryItem.model';
 import { CommunityEvent } from '../../models/CommunityEvent.model';
 import { Poll } from '../../models/Poll.model';
 import { PremiumContentItem } from '../../models/PremiumContentItem.model';
+import type { IMediaAsset } from '../../models/MediaAsset.model';
 import { asyncHandler } from '../../utils/asyncHandler';
 import { ApiError } from '../../utils/ApiError';
 import mongoose from 'mongoose';
 
+/** Extrae la dataUrl de un campo populado (o undefined si no existe). */
+function resolveDataUrl(ref: unknown): string | undefined {
+  if (!ref || typeof ref !== 'object') return undefined;
+  const media = ref as Partial<IMediaAsset>;
+  return media.dataUrl ?? media.publicUrl ?? undefined;
+}
+
 export const listMusicTracks: RequestHandler = asyncHandler(async (_req, res) => {
-  const items = await MusicTrack.find({ published: true }).sort({ sortOrder: 1, createdAt: 1 }).lean();
+  const items = await MusicTrack.find({ published: true })
+    .populate('coverMediaId', 'dataUrl publicUrl mimeType')
+    .populate('previewMediaId', 'dataUrl publicUrl mimeType')
+    .sort({ sortOrder: 1, createdAt: 1 })
+    .lean();
   res.set('Cache-Control', 'public, max-age=60');
-  res.json({ items: items.map((x) => ({ ...x, id: String(x._id), _id: undefined })) });
+  res.json({
+    items: items.map((x) => ({
+      ...x,
+      id: String(x._id),
+      _id: undefined,
+      coverDataUrl: resolveDataUrl(x.coverMediaId) ?? x.coverImageUrl,
+      previewDataUrl: resolveDataUrl(x.previewMediaId) ?? x.previewAudioUrl,
+    })),
+  });
 });
 
 export const listGallery: RequestHandler = asyncHandler(async (_req, res) => {
-  const items = await GalleryItem.find({ published: true }).sort({ sortOrder: 1, createdAt: 1 }).lean();
+  const items = await GalleryItem.find({ published: true })
+    .populate('thumbnailMediaId', 'dataUrl publicUrl mimeType')
+    .populate('detailImageMediaId', 'dataUrl publicUrl mimeType')
+    .populate('detailVideoMediaId', 'dataUrl publicUrl mimeType')
+    .sort({ sortOrder: 1, createdAt: 1 })
+    .lean();
   res.set('Cache-Control', 'public, max-age=60');
-  res.json({ items: items.map((x) => ({ ...x, id: String(x._id), _id: undefined })) });
+  res.json({
+    items: items.map((x) => ({
+      ...x,
+      id: String(x._id),
+      _id: undefined,
+      thumbnailDataUrl: resolveDataUrl(x.thumbnailMediaId) ?? x.thumbnailImageUrl,
+      detailImageDataUrl: resolveDataUrl(x.detailImageMediaId) ?? x.detailImageUrl,
+      detailVideoDataUrl: resolveDataUrl(x.detailVideoMediaId) ?? x.detailVideoUrl ?? x.externalVideoUrl,
+    })),
+  });
 });
 
 export const listCommunityEvents: RequestHandler = asyncHandler(async (_req, res) => {

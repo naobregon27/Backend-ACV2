@@ -1,16 +1,15 @@
-import fs from 'fs/promises';
-import path from 'path';
-import { v4 as uuidv4 } from 'uuid';
 import { env } from '../config/env';
 import { MediaAsset, type IMediaAssetDocument } from '../models/MediaAsset.model';
 import { ApiError } from '../utils/ApiError';
-import { ensureUploadDir, uploadRoot } from '../middlewares/upload.middleware';
+
+/** Límite seguro para un documento MongoDB (16 MB). Reservamos 512 KB para metadatos. */
+const MONGO_DOC_SAFE_BYTES = 15 * 1024 * 1024;
 
 export function maxBytesForMime(mime: string): number {
-  if (mime.startsWith('image/')) return env.MAX_UPLOAD_IMAGE_BYTES;
-  if (mime.startsWith('audio/')) return env.MAX_UPLOAD_AUDIO_BYTES;
-  if (mime.startsWith('video/')) return env.MAX_UPLOAD_VIDEO_BYTES;
-  return env.MAX_UPLOAD_IMAGE_BYTES;
+  if (mime.startsWith('image/')) return Math.min(env.MAX_UPLOAD_IMAGE_BYTES, MONGO_DOC_SAFE_BYTES);
+  if (mime.startsWith('audio/')) return Math.min(env.MAX_UPLOAD_AUDIO_BYTES, MONGO_DOC_SAFE_BYTES);
+  if (mime.startsWith('video/')) return Math.min(env.MAX_UPLOAD_VIDEO_BYTES, MONGO_DOC_SAFE_BYTES);
+  return Math.min(env.MAX_UPLOAD_IMAGE_BYTES, MONGO_DOC_SAFE_BYTES);
 }
 
 export function isAllowedMediaMime(mime: string): boolean {
@@ -62,27 +61,27 @@ export function defaultOriginalNameForMime(mime: string): string {
   return `upload${extensionForMime(mime) || '.bin'}`;
 }
 
+/**
+ * Persiste el archivo como base64 directamente en MongoDB.
+ * El campo `dataUrl` queda como `data:<mime>;base64,<datos>` listo para
+ * ser usado en `<img src>`, `<audio src>`, `<video src>` desde el frontend.
+ */
 export async function persistBufferAsMediaAsset(params: {
   buffer: Buffer;
   originalName: string;
   mimeType: string;
 }): Promise<IMediaAssetDocument> {
-  ensureUploadDir();
-  const extFromName = path.extname(params.originalName);
-  const ext = extFromName || extensionForMime(params.mimeType) || '.bin';
-  const storedName = `${uuidv4()}${ext}`;
-  const absolutePath = path.join(uploadRoot, storedName);
-  await fs.writeFile(absolutePath, params.buffer);
+  const base64 = params.buffer.toString('base64');
+  const dataUrl = `data:${params.mimeType};base64,${base64}`;
 
-  const relativePath = `/uploads/${storedName}`;
-  const publicUrl = `${env.PUBLIC_API_URL.replace(/\/$/, '')}${relativePath}`;
   return MediaAsset.create({
     originalName: params.originalName,
-    storedName,
+    storedName: '',
     mimeType: params.mimeType,
     sizeBytes: params.buffer.length,
-    relativePath,
-    publicUrl,
+    relativePath: '',
+    publicUrl: dataUrl,
+    dataUrl,
   });
 }
 
@@ -93,6 +92,7 @@ export function mediaPublic(m: IMediaAssetDocument) {
     mimeType: m.mimeType,
     sizeBytes: m.sizeBytes,
     publicUrl: m.publicUrl,
+    dataUrl: m.dataUrl ?? m.publicUrl,
     width: m.width,
     height: m.height,
     durationSeconds: m.durationSeconds,
@@ -104,6 +104,3 @@ export async function getMediaById(id: string): Promise<IMediaAssetDocument | nu
   return MediaAsset.findById(id);
 }
 
-export function uploadsRelativeFromFilename(filename: string): string {
-  return path.posix.join('/uploads', filename);
-}
