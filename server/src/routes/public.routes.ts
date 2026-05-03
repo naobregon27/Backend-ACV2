@@ -16,6 +16,7 @@ const contactLimiter = rateLimit({
   max: 30,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
 });
 
 router.get('/site-config', site.getSiteConfig);
