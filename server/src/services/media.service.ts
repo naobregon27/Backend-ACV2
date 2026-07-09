@@ -1,8 +1,9 @@
 import { env } from '../config/env';
 import { MediaAsset, type IMediaAssetDocument } from '../models/MediaAsset.model';
 import { ApiError } from '../utils/ApiError';
+import { uploadBufferToCloudinary } from './cloudinary.service';
 
-/** Límite seguro para un documento MongoDB (16 MB). Reservamos 512 KB para metadatos. */
+/** Límite seguro para subida vía JSON base64 antes de enviar a Cloudinary. */
 const MONGO_DOC_SAFE_BYTES = 15 * 1024 * 1024;
 
 export function maxBytesForMime(mime: string): number {
@@ -25,7 +26,7 @@ export function assertMediaSize(mimeType: string, sizeBytes: number): void {
   }
 }
 
-/** Acepta base64 puro o `data:mime;base64,...`. */
+/** Acepta base64 puro o `data:mime;base64,...` en el body JSON del admin. */
 export function parseBase64Field(fileBase64: string): { base64: string; mimeFromDataUrl?: string } {
   const oneLine = fileBase64.trim().replace(/\r?\n/g, '');
   const dataUrl = /^data:([^;]+);base64,(.*)$/is.exec(oneLine);
@@ -61,27 +62,25 @@ export function defaultOriginalNameForMime(mime: string): string {
   return `upload${extensionForMime(mime) || '.bin'}`;
 }
 
-/**
- * Persiste el archivo como base64 directamente en MongoDB.
- * El campo `dataUrl` queda como `data:<mime>;base64,<datos>` listo para
- * ser usado en `<img src>`, `<audio src>`, `<video src>` desde el frontend.
- */
+/** Sube el buffer a Cloudinary y guarda metadatos en MongoDB (sin base64). */
 export async function persistBufferAsMediaAsset(params: {
   buffer: Buffer;
   originalName: string;
   mimeType: string;
 }): Promise<IMediaAssetDocument> {
-  const base64 = params.buffer.toString('base64');
-  const dataUrl = `data:${params.mimeType};base64,${base64}`;
+  const uploaded = await uploadBufferToCloudinary(params);
 
   return MediaAsset.create({
     originalName: params.originalName,
-    storedName: '',
+    storedName: uploaded.publicId.split('/').pop() ?? uploaded.publicId,
     mimeType: params.mimeType,
-    sizeBytes: params.buffer.length,
-    relativePath: '',
-    publicUrl: dataUrl,
-    dataUrl,
+    sizeBytes: uploaded.bytes,
+    relativePath: env.CLOUDINARY_FOLDER,
+    publicUrl: uploaded.secureUrl,
+    cloudinaryPublicId: uploaded.publicId,
+    width: uploaded.width,
+    height: uploaded.height,
+    durationSeconds: uploaded.duration,
   });
 }
 
@@ -92,7 +91,7 @@ export function mediaPublic(m: IMediaAssetDocument) {
     mimeType: m.mimeType,
     sizeBytes: m.sizeBytes,
     publicUrl: m.publicUrl,
-    dataUrl: m.dataUrl ?? m.publicUrl,
+    cloudinaryPublicId: m.cloudinaryPublicId,
     width: m.width,
     height: m.height,
     durationSeconds: m.durationSeconds,
@@ -103,4 +102,3 @@ export function mediaPublic(m: IMediaAssetDocument) {
 export async function getMediaById(id: string): Promise<IMediaAssetDocument | null> {
   return MediaAsset.findById(id);
 }
-

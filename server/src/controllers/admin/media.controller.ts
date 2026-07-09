@@ -28,7 +28,11 @@ export const uploadMedia: RequestHandler = asyncHandler(async (req, res) => {
   if (!isAllowedMediaMime(mimeType)) {
     throw new ApiError(400, 'INVALID_FILE_TYPE', 'Tipo de archivo no permitido');
   }
-  const buffer = Buffer.from(base64, 'base64');
+  const normalizedBase64 = base64.replace(/\s/g, '');
+  if (!/^[A-Za-z0-9+/]*={0,2}$/.test(normalizedBase64)) {
+    throw new ApiError(400, 'INVALID_BASE64', 'Base64 inválido');
+  }
+  const buffer = Buffer.from(normalizedBase64, 'base64');
   if (!buffer.length) {
     throw new ApiError(400, 'INVALID_BASE64', 'No se pudo decodificar el base64');
   }

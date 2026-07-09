@@ -11,9 +11,8 @@ import { ApiError } from './utils/ApiError';
 import { swaggerSpec } from './swagger';
 
 /**
- * Límite de body JSON para el endpoint de subida de media.
- * Base64 ocupa ~4/3 del binario. El límite máximo seguro para MongoDB
- * es ~15 MB binario → ~20 MB en base64 + overhead JSON.
+ * Límite de body JSON para el endpoint de subida de media (base64 en request → Cloudinary).
+ * Base64 ocupa ~4/3 del binario. Reservamos margen para metadatos JSON.
  */
 const MONGO_SAFE_BYTES = 15 * 1024 * 1024;
 const adminMediaUploadJsonLimitBytes = Math.ceil((MONGO_SAFE_BYTES * 4) / 3) + 512 * 1024;

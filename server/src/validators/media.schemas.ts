@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-/** Cuerpo JSON: archivo en base64 (puro o data URL) + tipo MIME si no va en el data URL. */
+/** Cuerpo JSON: archivo en base64 (puro o data URL) → se sube a Cloudinary. */
 export const mediaBase64UploadSchema = z.object({
   fileBase64: z.string().min(1, 'fileBase64 requerido'),
   mimeType: z.string().min(1).optional(),

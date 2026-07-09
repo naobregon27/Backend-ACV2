@@ -7,6 +7,8 @@ const app = createApp();
 const PNG_1X1_BASE64 =
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
 
+const CLOUDINARY_URL_PATTERN = /^https:\/\/res\.cloudinary\.com\//;
+
 let adminToken: string;
 
 beforeAll(async () => {
@@ -71,8 +73,8 @@ describe('GET /api/v1/public/gallery', () => {
 
     const item = res.body.items[0];
     expect(item.title).toBe('Foto del show');
-    // El thumbnailDataUrl debe resolverse desde el MediaAsset
-    expect(item.thumbnailDataUrl).toMatch(/^data:image\/png;base64,/);
+    // El thumbnailDataUrl debe resolverse desde el MediaAsset (URL Cloudinary)
+    expect(item.thumbnailDataUrl).toMatch(CLOUDINARY_URL_PATTERN);
   });
 
   it('no devuelve ítems no publicados', async () => {
@@ -128,7 +130,7 @@ describe('GET /api/v1/public/music-tracks', () => {
 
     const track = res.body.items[0];
     expect(track.title).toBe('Mi Canción');
-    expect(track.coverDataUrl).toMatch(/^data:image\/png;base64,/);
+    expect(track.coverDataUrl).toMatch(CLOUDINARY_URL_PATTERN);
   });
 });
 
@@ -147,7 +149,7 @@ describe('GET /api/v1/public/community-events', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
         title: 'Concierto en vivo',
-        description: 'Gran concierto',
+        city: 'Buenos Aires',
         published: true,
         sortOrder: 0,
         startsAt: new Date(Date.now() + 86400000).toISOString(),

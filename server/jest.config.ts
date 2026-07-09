@@ -11,6 +11,10 @@ const config: Config = {
   },
   globalSetup: '<rootDir>/src/__tests__/setup/globalSetup.ts',
   globalTeardown: '<rootDir>/src/__tests__/setup/globalTeardown.ts',
+  setupFilesAfterEnv: [
+    '<rootDir>/src/__tests__/setup/cloudinaryMock.ts',
+    '<rootDir>/src/__tests__/setup/emailMock.ts',
+  ],
   testTimeout: 30000,
   verbose: true,
 };

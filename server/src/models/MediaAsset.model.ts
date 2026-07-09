@@ -6,9 +6,9 @@ export interface IMediaAsset {
   mimeType: string;
   sizeBytes: number;
   relativePath: string;
+  /** URL pública HTTPS de Cloudinary. */
   publicUrl: string;
-  /** Data URL completa: `data:<mime>;base64,<datos>` almacenada directamente en MongoDB. */
-  dataUrl?: string;
+  cloudinaryPublicId?: string;
   width?: number;
   height?: number;
   durationSeconds?: number;
@@ -26,7 +26,7 @@ const mediaAssetSchema = new Schema<IMediaAssetDocument>(
     sizeBytes: { type: Number, required: true },
     relativePath: { type: String, default: '' },
     publicUrl: { type: String, required: true },
-    dataUrl: { type: String },
+    cloudinaryPublicId: { type: String, index: true },
     width: { type: Number },
     height: { type: Number },
     durationSeconds: { type: Number },

@@ -12,6 +12,8 @@ const PNG_1X1_BASE64 =
 const MP3_TINY_BASE64 =
   'SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAAEAAABIADAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV6urq6urq6urq6urq6urq6urq6urq6urq6v////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAASDs90hvAAAAAAAAAAAAAAAAAAAA//MUZAAAAAGkAAAAAAAAA0gAAAAATEFN//MUZAMAAAGkAAAAAAAAA0gAAAAARTMu//MUZAYAAAGkAAAAAAAAA0gAAAAAOTku//MUZAkAAAGkAAAAAAAAA0gAAAAANVVV';
 
+const CLOUDINARY_URL_PATTERN = /^https:\/\/res\.cloudinary\.com\//;
+
 let adminToken: string;
 
 beforeAll(async () => {
@@ -20,7 +22,6 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await clearTestDB();
-  // Crear admin para los tests
   const User = (await import('../models/User.model')).User;
   const { hashPassword } = await import('../services/auth.service');
   await User.create({
@@ -41,10 +42,8 @@ afterAll(async () => {
   await disconnectTestDB();
 });
 
-// ─── Upload imagen ────────────────────────────────────────────────────────────
-
 describe('POST /api/v1/admin/media/upload', () => {
-  it('sube una imagen PNG y devuelve dataUrl en formato data:image/png;base64,...', async () => {
+  it('sube una imagen PNG y devuelve URL de Cloudinary', async () => {
     const res = await request(app)
       .post('/api/v1/admin/media/upload')
       .set('Authorization', `Bearer ${adminToken}`)
@@ -56,7 +55,8 @@ describe('POST /api/v1/admin/media/upload', () => {
 
     expect(res.status).toBe(201);
     expect(res.body.media).toHaveProperty('id');
-    expect(res.body.media.dataUrl).toMatch(/^data:image\/png;base64,/);
+    expect(res.body.media.publicUrl).toMatch(CLOUDINARY_URL_PATTERN);
+    expect(res.body.media.cloudinaryPublicId).toMatch(/^musica-acv\//);
     expect(res.body.media.mimeType).toBe('image/png');
     expect(res.body.media.sizeBytes).toBeGreaterThan(0);
   });
@@ -70,7 +70,7 @@ describe('POST /api/v1/admin/media/upload', () => {
 
     expect(res.status).toBe(201);
     expect(res.body.media.mimeType).toBe('image/png');
-    expect(res.body.media.dataUrl).toMatch(/^data:image\/png;base64,/);
+    expect(res.body.media.publicUrl).toMatch(CLOUDINARY_URL_PATTERN);
   });
 
   it('rechaza tipo MIME no permitido (400)', async () => {
@@ -102,7 +102,7 @@ describe('POST /api/v1/admin/media/upload', () => {
     expect(res.status).toBe(400);
   });
 
-  it('sube audio MP3 y devuelve dataUrl de audio', async () => {
+  it('sube audio MP3 y devuelve URL de Cloudinary', async () => {
     const res = await request(app)
       .post('/api/v1/admin/media/upload')
       .set('Authorization', `Bearer ${adminToken}`)
@@ -113,11 +113,10 @@ describe('POST /api/v1/admin/media/upload', () => {
       });
 
     expect(res.status).toBe(201);
-    expect(res.body.media.dataUrl).toMatch(/^data:audio\/mpeg;base64,/);
+    expect(res.body.media.publicUrl).toMatch(CLOUDINARY_URL_PATTERN);
+    expect(res.body.media.mimeType).toBe('audio/mpeg');
   });
 });
-
-// ─── Listar media ─────────────────────────────────────────────────────────────
 
 describe('GET /api/v1/admin/media', () => {
   it('devuelve lista paginada de assets (vacía inicialmente)', async () => {
@@ -131,7 +130,7 @@ describe('GET /api/v1/admin/media', () => {
     expect(res.body).toHaveProperty('meta');
   });
 
-  it('devuelve el asset subido con dataUrl incluida', async () => {
+  it('devuelve el asset subido con publicUrl de Cloudinary', async () => {
     await request(app)
       .post('/api/v1/admin/media/upload')
       .set('Authorization', `Bearer ${adminToken}`)
@@ -142,15 +141,12 @@ describe('GET /api/v1/admin/media', () => {
       .set('Authorization', `Bearer ${adminToken}`);
 
     expect(res.body.items).toHaveLength(1);
-    expect(res.body.items[0]).toHaveProperty('dataUrl');
-    expect(res.body.items[0].dataUrl).toMatch(/^data:image\/png;base64,/);
+    expect(res.body.items[0].publicUrl).toMatch(CLOUDINARY_URL_PATTERN);
   });
 });
 
-// ─── Obtener media por ID ─────────────────────────────────────────────────────
-
 describe('GET /api/v1/admin/media/:id', () => {
-  it('devuelve el asset por ID con dataUrl', async () => {
+  it('devuelve el asset por ID con publicUrl de Cloudinary', async () => {
     const upload = await request(app)
       .post('/api/v1/admin/media/upload')
       .set('Authorization', `Bearer ${adminToken}`)
@@ -163,7 +159,7 @@ describe('GET /api/v1/admin/media/:id', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.media.id).toBe(id);
-    expect(res.body.media.dataUrl).toMatch(/^data:image\/png;base64,/);
+    expect(res.body.media.publicUrl).toMatch(CLOUDINARY_URL_PATTERN);
   });
 
   it('devuelve 404 para ID inexistente', async () => {

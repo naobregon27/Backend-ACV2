@@ -22,6 +22,10 @@ export async function connectTestDB() {
   process.env.JWT_REFRESH_SECRET =
     process.env.JWT_REFRESH_SECRET ?? 'test-refresh-secret-minimo-32-caracteres-ok';
   process.env.PUBLIC_API_URL = process.env.PUBLIC_API_URL ?? 'http://localhost:4000';
+  process.env.CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME ?? 'test-cloud';
+  process.env.CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY ?? 'test-api-key';
+  process.env.CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET ?? 'test-api-secret';
+  process.env.CLOUDINARY_FOLDER = process.env.CLOUDINARY_FOLDER ?? 'musica-acv';
   process.env.NODE_ENV = 'test';
   process.env.MONGODB_URI = getTestMongoUri();
 

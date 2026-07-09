@@ -12,6 +12,11 @@ import {
   verifyRefreshTokenHash,
 } from '../services/auth.service';
 import { verifyRefreshToken } from '../utils/jwt';
+import {
+  dispatchEmail,
+  sendNewUserAdminNotification,
+  sendWelcomeEmail,
+} from '../services/email.service';
 
 export const register: RequestHandler = asyncHandler(async (req, res) => {
   const { name, email, password } = req.body as { name: string; email: string; password: string };
@@ -27,6 +32,18 @@ export const register: RequestHandler = asyncHandler(async (req, res) => {
     hasPremiumAccess: false,
   });
   const tokens = await issueTokens(user);
+  dispatchEmail(
+    () =>
+      Promise.all([
+        sendWelcomeEmail({ name: user.name, email: user.email }),
+        sendNewUserAdminNotification({
+          name: user.name,
+          email: user.email,
+          registeredAt: user.createdAt,
+        }),
+      ]).then(() => undefined),
+    'registro de usuario',
+  );
   res.status(201).json(tokens);
 });
 

@@ -9,17 +9,17 @@ import { asyncHandler } from '../../utils/asyncHandler';
 import { ApiError } from '../../utils/ApiError';
 import mongoose from 'mongoose';
 
-/** Extrae la dataUrl de un campo populado (o undefined si no existe). */
-function resolveDataUrl(ref: unknown): string | undefined {
+/** Extrae la URL pública de un MediaAsset populado (Cloudinary). */
+function resolveMediaUrl(ref: unknown): string | undefined {
   if (!ref || typeof ref !== 'object') return undefined;
   const media = ref as Partial<IMediaAsset>;
-  return media.dataUrl ?? media.publicUrl ?? undefined;
+  return media.publicUrl ?? undefined;
 }
 
 export const listMusicTracks: RequestHandler = asyncHandler(async (_req, res) => {
   const items = await MusicTrack.find({ published: true })
-    .populate('coverMediaId', 'dataUrl publicUrl mimeType')
-    .populate('previewMediaId', 'dataUrl publicUrl mimeType')
+    .populate('coverMediaId', 'publicUrl mimeType cloudinaryPublicId')
+    .populate('previewMediaId', 'publicUrl mimeType cloudinaryPublicId')
     .sort({ sortOrder: 1, createdAt: 1 })
     .lean();
   res.set('Cache-Control', 'public, max-age=60');
@@ -28,17 +28,17 @@ export const listMusicTracks: RequestHandler = asyncHandler(async (_req, res) =>
       ...x,
       id: String(x._id),
       _id: undefined,
-      coverDataUrl: resolveDataUrl(x.coverMediaId) ?? x.coverImageUrl,
-      previewDataUrl: resolveDataUrl(x.previewMediaId) ?? x.previewAudioUrl,
+      coverDataUrl: resolveMediaUrl(x.coverMediaId) ?? x.coverImageUrl,
+      previewDataUrl: resolveMediaUrl(x.previewMediaId) ?? x.previewAudioUrl,
     })),
   });
 });
 
 export const listGallery: RequestHandler = asyncHandler(async (_req, res) => {
   const items = await GalleryItem.find({ published: true })
-    .populate('thumbnailMediaId', 'dataUrl publicUrl mimeType')
-    .populate('detailImageMediaId', 'dataUrl publicUrl mimeType')
-    .populate('detailVideoMediaId', 'dataUrl publicUrl mimeType')
+    .populate('thumbnailMediaId', 'publicUrl mimeType cloudinaryPublicId')
+    .populate('detailImageMediaId', 'publicUrl mimeType cloudinaryPublicId')
+    .populate('detailVideoMediaId', 'publicUrl mimeType cloudinaryPublicId')
     .sort({ sortOrder: 1, createdAt: 1 })
     .lean();
   res.set('Cache-Control', 'public, max-age=60');
@@ -47,9 +47,9 @@ export const listGallery: RequestHandler = asyncHandler(async (_req, res) => {
       ...x,
       id: String(x._id),
       _id: undefined,
-      thumbnailDataUrl: resolveDataUrl(x.thumbnailMediaId) ?? x.thumbnailImageUrl,
-      detailImageDataUrl: resolveDataUrl(x.detailImageMediaId) ?? x.detailImageUrl,
-      detailVideoDataUrl: resolveDataUrl(x.detailVideoMediaId) ?? x.detailVideoUrl ?? x.externalVideoUrl,
+      thumbnailDataUrl: resolveMediaUrl(x.thumbnailMediaId) ?? x.thumbnailImageUrl,
+      detailImageDataUrl: resolveMediaUrl(x.detailImageMediaId) ?? x.detailImageUrl,
+      detailVideoDataUrl: resolveMediaUrl(x.detailVideoMediaId) ?? x.detailVideoUrl ?? x.externalVideoUrl,
     })),
   });
 });
