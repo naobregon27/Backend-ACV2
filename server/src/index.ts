@@ -1,10 +1,12 @@
 import { connectDatabase, env } from './config';
 import { ensureDefaultSiteConfig, ensureInitialAdminUser } from './services/bootstrap.service';
+import { logEmailStartupStatus } from './services/email.service';
 
 async function bootstrap(): Promise<void> {
   const [, { createApp }] = await Promise.all([connectDatabase(), import('./app')]);
   await ensureDefaultSiteConfig();
   await ensureInitialAdminUser();
+  logEmailStartupStatus();
   console.info('[ACV2] Bootstrap completado: configuración del sitio y usuarios listos.');
   const app = createApp();
   app.listen(env.PORT, () => {

@@ -1,5 +1,6 @@
 jest.mock('../../services/email.service', () => ({
   isEmailConfigured: jest.fn(() => false),
+  logEmailStartupStatus: jest.fn(),
   dispatchEmail: jest.fn(),
   sendWelcomeEmail: jest.fn(async () => undefined),
   sendNewUserAdminNotification: jest.fn(async () => undefined),

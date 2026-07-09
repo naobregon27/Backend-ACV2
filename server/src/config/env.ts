@@ -34,8 +34,8 @@ const envSchema = z.object({
   SENDGRID_API_KEY: z.preprocess(emptyToUndefined, z.string().min(1).optional()),
   SENDGRID_FROM_EMAIL: z.preprocess(emptyToUndefined, z.string().email().optional()),
   SENDGRID_FROM_NAME: z.string().default('ACV2.Music'),
-  /** Email donde el admin recibe alertas (contacto, registros). Default: ADMIN_EMAIL. */
-  ADMIN_NOTIFICATION_EMAIL: z.string().email().optional(),
+  /** Casilla real donde llegan alertas de contacto y registros (no usar el ADMIN_EMAIL de login). */
+  ADMIN_NOTIFICATION_EMAIL: z.preprocess(emptyToUndefined, z.string().email().optional()),
   SITE_NAME: z.string().default('ACV2.Music'),
   PUBLIC_WEB_URL: z.string().url().default('http://localhost:5173'),
 });

@@ -11,7 +11,8 @@
     "seed:admin": "ts-node src/scripts/seedAdmin.ts",
     "test": "jest --config jest.config.ts --forceExit",
     "test:watch": "jest --config jest.config.ts --watch",
-    "integration:smoke": "tsx src/scripts/integrationSmoke.ts"
+    "integration:smoke": "tsx src/scripts/integrationSmoke.ts",
+    "test:email": "tsx src/scripts/testSendgrid.ts"
   },
   "engines": {
     "node": ">=18.18.0"
