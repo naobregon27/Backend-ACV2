@@ -7,8 +7,6 @@ build/
 *.tsbuildinfo
 
 # Environment (configurar variables en Render u otro host)
-.env
-.env.*
 !.env.example
 
 # Uploads locales / logs
@@ -35,3 +33,4 @@ temp_auto_push.bat
 temp_interactive_push.bat
 .gitignore
 branch_structure.json
+config.bat
