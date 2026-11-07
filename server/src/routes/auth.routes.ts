@@ -12,7 +12,7 @@ const authLimiter = rateLimit({
   max: 60,
   standardHeaders: true,
   legacyHeaders: false,
-  // Si trust proxy no aplicara (p. ej. NODE_ENV distinto en hosting), evita tirar el middleware antes del login
+  // Si trust proxy no aplicara , evita tirar el middleware antes del login
   validate: { xForwardedForHeader: false },
 });
 
